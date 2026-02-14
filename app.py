@@ -22,7 +22,7 @@ st.set_page_config(
 )
 
 # ============================================================================
-# GOLDEN ARCHES THEME
+# GOLDEN ARCHES THEME WITH LOGO
 # ============================================================================
 
 st.markdown("""
@@ -37,6 +37,21 @@ st.markdown("""
     [data-testid="stSidebar"] {
         background-color: #1a1a1a;
         border-right: 2px solid #FFC72C;
+    }
+    
+    /* Logo Container */
+    .logo-container {
+        text-align: center;
+        padding: 20px 0;
+        background: linear-gradient(135deg, #DA291C 0%, #FF3D3D 100%);
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 16px rgba(218, 41, 28, 0.3);
+    }
+    
+    .logo-container img {
+        max-width: 200px;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
     }
     
     /* Headers - Golden Yellow */
@@ -525,10 +540,16 @@ def simulate_staffing_impact(df, staffing_increase_pct):
 
 def main():
     
-    # === HEADER ===
+    # === HEADER WITH LOGO ===
+    st.markdown("""
+        <div class="logo-container">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/McDonald%27s_Golden_Arches.svg" alt="McDonald's Logo">
+        </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown("""
         <h1 style='text-align: center; font-size: 3.5rem; margin-bottom: 0;'>
-            🍔 McDONALD'S OPERATIONS COMMAND CENTER
+            McDONALD'S OPERATIONS COMMAND CENTER
         </h1>
         <p style='text-align: center; color: #DA291C; font-size: 1.4rem; margin-top: 5px; font-weight: bold;'>
             Kitchen Efficiency × Customer Satisfaction = Golden Arches Excellence
@@ -737,9 +758,6 @@ def main():
         
         # Create scatter data
         scatter_data = filtered_df[['Order_Value_USD', 'Prep_Time_Secs', 'Channel']].copy()
-        
-        # Pivot for multi-series scatter
-        channels_for_scatter = scatter_data['Channel'].unique()
         
         # Simple scatter representation
         st.scatter_chart(
