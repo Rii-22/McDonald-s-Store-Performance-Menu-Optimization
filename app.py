@@ -842,6 +842,13 @@ def main():
         
         drive_thru_pct = len(df[df['Channel'] == 'Drive-Thru']) / len(df) * 100
         
+        # Get simulation results for any staffing level (default to 0 if not set)
+        if staffing_increase > 0:
+            sim_results = simulate_staffing_impact(df, staffing_increase)
+            staffing_text = f"{staffing_increase}% increase → {sim_results['time_reduction_secs']:.0f}s faster"
+        else:
+            staffing_text = "Configure sidebar slider to simulate staffing changes"
+        
         st.markdown(f"""
         ### 🔍 Key Operational Findings
         
@@ -881,7 +888,7 @@ def main():
         
         2. **Peak Hour Staffing Optimization**
            - Add {len(anomalies) // 10 + 2} kitchen staff during 12-2 PM window
-           - Use simulation: {staffing_increase}% increase → {sim_results['time_reduction_secs']:.0f}s faster (if staffing_increase > 0 else "Configure sidebar to test")
+           - {staffing_text}
            - Expected: Eliminate {len(anomalies)} bottleneck events
         
         3. **Menu Upsell Campaign**
