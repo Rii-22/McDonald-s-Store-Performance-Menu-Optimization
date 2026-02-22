@@ -866,7 +866,45 @@ def main():
             staffing_text = f"{staffing_increase}% increase → {sim_results['time_reduction_secs']:.0f}s faster"
         else:
             staffing_text = "Configure sidebar slider to simulate staffing changes"
-        
+
+        # ============================================================
+        # BUG FIX: Revenue calculation for upsell improvement
+        # The original formula (0.75 - upsell_rate/100) produced a
+        # negative number when upsell_rate already exceeds 75%.
+        # Fix: always show the absolute revenue opportunity, and label
+        # it correctly depending on whether we're above/below target.
+        # ============================================================
+        upsell_target = 0.75
+        current_upsell_fraction = upsell_rate / 100
+
+        if current_upsell_fraction < upsell_target:
+            # Below target – show potential gain from reaching 75%
+            upsell_gap = upsell_target - current_upsell_fraction
+            upsell_revenue_label = f"Upsell rate improvement ({upsell_rate:.1f}% → 75%)"
+            upsell_revenue_value = upsell_gap * len(df) * 2.50
+            upsell_revenue_str = f"+${upsell_revenue_value:,.0f}"
+        else:
+            # Already above target – show incremental value of each 1% gain beyond target
+            upsell_gap = current_upsell_fraction - upsell_target
+            upsell_revenue_label = f"Upsell rate already above target ({upsell_rate:.1f}% vs 75%) – incremental upside"
+            upsell_revenue_value = 0.01 * len(df) * 2.50   # value of next 1% gain
+            upsell_revenue_str = f"+${upsell_revenue_value:,.0f} per 1% further increase"
+
+        premium_attachment = menu_category_stats[
+            menu_category_stats['Menu_Category'] == 'Premium Collection'
+        ]['Attachment_Rate_%'].values
+        premium_attachment_rate = premium_attachment[0] if len(premium_attachment) > 0 else 0.0
+
+        premium_avg_value = menu_category_stats[
+            menu_category_stats['Menu_Category'] == 'Premium Collection'
+        ]['Avg_Order_Value'].values
+        premium_price_premium = premium_avg_value[0] if len(premium_avg_value) > 0 else 0.0
+
+        pairing_monthly_revenue = best_pairing['Frequency'] * 1.50 * 4
+        labor_savings = len(df) / 8000 * 5000 * 0.20
+        waste_savings = len(df) * 0.15
+        total_impact = upsell_revenue_value + pairing_monthly_revenue + labor_savings
+
         st.markdown(f"""
         ### 🔍 Key Operational Findings
         
@@ -886,7 +924,7 @@ def main():
         - Current upsell rate: **{upsell_rate:.1f}%**
         - {menu_category_stats.loc[menu_category_stats['Attachment_Rate_%'].idxmax(), 'Menu_Category']} category shows highest attachment potential
         - **Top pairing:** {best_pairing['Pairing']} (${best_pairing['Avg_Value']:.2f} avg value, {best_pairing['Frequency']:,} orders)
-        - Premium items command {menu_category_stats[menu_category_stats['Menu_Category']=='Premium Collection']['Avg_Order_Value'].values[0] if len(menu_category_stats[menu_category_stats['Menu_Category']=='Premium Collection']) > 0 else 0:.1f}% price premium
+        - Premium items command ${premium_price_premium:.2f} average order value
         
         #### 4. Peak Hour Performance
         - **{len(anomalies)} bottleneck events** identified during lunch rush (12 PM - 2 PM)
@@ -912,7 +950,7 @@ def main():
         3. **Menu Upsell Campaign**
            - Promote {best_pairing['Pairing']} as "Manager's Special Combo"
            - Train Drive-Thru staff on suggestive selling
-           - Target: Increase attachment rate from {upsell_rate:.1f}% to 75%
+           - Target: Increase attachment rate to 80%
         
         #### **Short-Term Initiatives (Month 1-2)**
         
@@ -922,7 +960,7 @@ def main():
            - **Delivery:** Pre-stage packaging materials during peak hours
         
         2. **Menu Engineering**
-           - Analyze Premium Collection attachment rates ({menu_category_stats[menu_category_stats['Menu_Category']=='Premium Collection']['Attachment_Rate_%'].values[0] if len(menu_category_stats[menu_category_stats['Menu_Category']=='Premium Collection']) > 0 else 0:.1f}%)
+           - Analyze Premium Collection attachment rates ({premium_attachment_rate:.1f}%)
            - Create "Value + Premium" hybrid bundles
            - Test dynamic pricing during off-peak hours
         
@@ -952,15 +990,15 @@ def main():
         ### 💰 Financial Impact Projection
         
         **Revenue Opportunities:**
-        - Upsell rate improvement (70% → 75%): **+${((0.75 - upsell_rate/100) * len(df) * 2.50):,.0f}** monthly
-        - Premium pairing promotion: **+${(best_pairing['Frequency'] * 1.50 * 4):,.0f}** monthly (4 weeks)
+        - {upsell_revenue_label}: **{upsell_revenue_str}** monthly
+        - Premium pairing promotion: **+${pairing_monthly_revenue:,.0f}** monthly (4 weeks)
         - Peak hour throughput optimization: **+{int(len(anomalies) * 0.7 * 30)}** additional orders/month
         
         **Cost Savings:**
-        - Labor optimization: **-${(len(df) / 8000 * 5000 * 0.20):,.0f}** monthly (20% efficiency gain)
-        - Waste reduction (faster service): **-${(len(df) * 0.15):,.0f}** monthly
+        - Labor optimization: **-${labor_savings:,.0f}** monthly (20% efficiency gain)
+        - Waste reduction (faster service): **-${waste_savings:,.0f}** monthly
         
-        **Total Projected Monthly Impact: +${((0.75 - upsell_rate/100) * len(df) * 2.50) + (best_pairing['Frequency'] * 1.50 * 4) + (len(df) / 8000 * 5000 * 0.20):,.0f}**
+        **Total Projected Monthly Impact: +${total_impact:,.0f}**
         
         ---
         
